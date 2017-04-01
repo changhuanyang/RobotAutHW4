@@ -91,7 +91,13 @@ class SimpleEnvironment(object):
               
         wc = [0., 0., 0.]
         grid_coordinate = self.discrete_env.ConfigurationToGridCoord(wc)
+        #increments for omega considering a limit of pi rotation and switching the direction once the rotation goes over pi
+        omega_increment = 4.0 / self.discrete_env.num_cells[2]
+        #half range of orientations
+        mid_num_cells = self.discrete_env.num_cells[2] / 2
 
+        omega_l = 1;
+        omega_r = 1;
         # Iterate through each possible starting orientation
         for idx in range(int(self.discrete_env.num_cells[2])):
             self.actions[idx] = []
@@ -101,6 +107,20 @@ class SimpleEnvironment(object):
             # TODO: Here you will construct a set of actions
             #  to be used during the planning process
             #
+            if idx < mid_num_cells:# for 0 to pi 
+                omega_r = 1 - omega_increment*idx
+                omega_l = 1
+            else if idx == mid_num_cells: # go backward for pi
+                omega_r = -1
+                omega_l = -1
+            else :# for pi to 0
+                omega_r = -1 
+                omega_l = -1 + omega_increment*(mid_num_cells - idx)
+
+            control = Control(omega_left,omega_right,0.1);
+            footprint = GenerateFootprintFromControl(start_config, control);
+            sample_action = Action(control, footprint);
+            self.actions[idx] = sample_action
          
             
 
