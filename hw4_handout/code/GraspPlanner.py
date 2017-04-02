@@ -49,7 +49,7 @@ class GraspPlanner(object):
         #print "trans:  {}".format(trans)
         
         for pose in poses:
-    	    self.robot.SetTransform(pose) # pose format [s, vx, vy, vz, x, y, z]
+    	    #self.robot.SetTransform(pose) # pose format [s, vx, vy, vz, x, y, z]
             angle = openravepy.axisAngleFromQuat(pose)
             continuousPose = copy.deepcopy([pose[4], pose[5], angle[2]]) # 2D location with orientation
             #TODO convert continuous pose to discrete pose

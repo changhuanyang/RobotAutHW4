@@ -20,12 +20,14 @@ class SimpleEnvironment(object):
         self.robot = herb.robot
         self.boundary_limits = [[-5., -5., -numpy.pi], [5., 5., numpy.pi]]
         lower_limits, upper_limits = self.boundary_limits
+        #print(lower_limits)
+        #print(upper_limits)
+        #print(resolution)
         self.discrete_env = DiscreteEnvironment(resolution, lower_limits, upper_limits)
-
         self.resolution = resolution
         self.ConstructActions()
 
-    def GenerateFootprintFromControl(self, start_config, control, stepsize=0.01):
+      def GenerateFootprintFromControl(self, start_config, control, stepsize=0.01):
 
         # Extract the elements of the control
         ul = control.ul
@@ -80,9 +82,14 @@ class SimpleEnvironment(object):
                      
         pl.ion()
         pl.show()
+        #help function
+    def ComputePathLength(self, path):
+        length = 0
 
-        
-
+        for milestone in range(1,len(path)):
+            dist =  numpy.linalg.norm(numpy.array(path[milestone-1])-numpy.array(path[milestone]))
+            length += dist
+        return length
     def ConstructActions(self):
 
         # Actions is a dictionary that maps orientation of the robot to
@@ -91,13 +98,19 @@ class SimpleEnvironment(object):
               
         wc = [0., 0., 0.]
         grid_coordinate = self.discrete_env.ConfigurationToGridCoord(wc)
-        #increments for omega considering a limit of pi rotation and switching the direction once the rotation goes over pi
-        omega_increment = 4.0 / self.discrete_env.num_cells[2]
-        #half range of orientations
-        mid_num_cells = self.discrete_env.num_cells[2] / 2
+        
+        #Peter
+        Omega_left  = 1
+        Omega_right = 1
+        Duration = 0.2
+        
+        #4type_control setting 
+        C_forward = Control(Omega_left,Omega_right,Duration);
+        C_backward = Control(-Omega_left,-Omega_right,Duration);
 
-        omega_l = 1;
-        omega_r = 1;
+        C_rightturn = Control(-Omega_left,Omega_right,Duration);
+        C_leftrurn = Control(Omega_left,Omega_right,Duration);
+
         # Iterate through each possible starting orientation
         for idx in range(int(self.discrete_env.num_cells[2])):
             self.actions[idx] = []
@@ -106,23 +119,22 @@ class SimpleEnvironment(object):
 
             # TODO: Here you will construct a set of actions
             #  to be used during the planning process
-            #
-            if idx < mid_num_cells:# for 0 to pi 
-                omega_r = 1 - omega_increment*idx
-                omega_l = 1
-            else if idx == mid_num_cells: # go backward for pi
-                omega_r = -1
-                omega_l = -1
-            else :# for pi to 0
-                omega_r = -1 
-                omega_l = -1 + omega_increment*(mid_num_cells - idx)
 
-            control = Control(omega_left,omega_right,0.1);
-            footprint = GenerateFootprintFromControl(start_config, control);
-            sample_action = Action(control, footprint);
-            self.actions[idx] = sample_action
-         
-            
+            #generate the footprint-template,start form(o=0,0,idx) to somewhere
+            fp_forward = GenerateFootprintFromControl(start_config,C_forward,0.01)
+            fp_backward = GenerateFootprintFromControl(start_config,C_backward,0.01)
+            fp_rightturn = GenerateFootprintFromControl(start_config,C_rightturn,0.01)
+            fp_leftturn = GenerateFootprintFromControl(start_config,C_leftturn,0.01)
+            #generate the Action-template
+            Ac_forward = Action(C_forward,fp_forward)
+            Ac_backward = Action(C_backward,fp_backward)
+            Ac_rightturn = Action(C_rightturn,fp_rightturn)
+            Ac_leftturn = Action(C_leftturn,fp_leftturn)
+
+            #storage in actions
+            self.actions[idx] = [Ac_forward,Ac_backward,Ac_rightturn,Ac_leftturn]
+
+
 
     def GetSuccessors(self, node_id):
 
@@ -132,7 +144,12 @@ class SimpleEnvironment(object):
         #  up the configuration associated with the particular node_id
         #  and return a list of node_ids and controls that represent the neighboring
         #  nodes
+        coord = numpy.array(self.discrete_env.NodeIdToGridCoord(node_id))
+        #print config
         
+        
+
+
         return successors
 
     def ComputeDistance(self, start_id, end_id):
@@ -142,12 +159,16 @@ class SimpleEnvironment(object):
         # TODO: Here you will implement a function that 
         # computes the distance between the configurations given
         # by the two node ids
+        start_config = numpy.array(self.discrete_env.NodeIdToConfiguration(start_id))
+        goal_config = numpy.array(self.discrete_env.NodeIdToConfiguration(goal_id))
+        #only use (x,y) to count the dist
+        dist = numpy.linalg.norm(goal_config[0:1:1] - start_config[0:1:1])
 
         return dist
 
     def ComputeHeuristicCost(self, start_id, goal_id):
         
-        cost = 0
+        cost = ComputeDistance(start_id, end_id)
 
         # TODO: Here you will implement a function that 
         # computes the heuristic cost between the configurations

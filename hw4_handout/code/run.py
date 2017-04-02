@@ -3,14 +3,14 @@
 import argparse, numpy, openravepy, time
 
 from HerbRobot import HerbRobot
-from HerbEnvironment import HerbEnvironment
+#from HerbEnvironment import HerbEnvironment
 from SimpleRobot import SimpleRobot
-from SimpleEnvironment import SimpleEnvironment
+#from SimpleEnvironment import SimpleEnvironment
 from GraspPlanner import GraspPlanner
-from AStarPlanner import AStarPlanner
+#from AStarPlanner import AStarPlanner
 # TODO: Import the applicable RRTPlanner
 #Peter:
-from HeuristicRRTPlanner import HeuristicRRTPlanner 
+#from HeuristicRRTPlanner import HeuristicRRTPlanner 
 #end
 
 if __name__ == "__main__":
@@ -74,13 +74,15 @@ if __name__ == "__main__":
     # Create environments for planning the arm and base
     resolution = [args.hres, args.hres, args.tres]
     herb = HerbRobot(env, robot, args.manip)
-    arm_env = HerbEnvironment(herb)
+    #arm_env = HerbEnvironment(herb,0.2)
     herb_base = SimpleRobot(env, robot)
-    base_env = SimpleEnvironment(herb_base, resolution)
+    #base_env = SimpleEnvironment(herb_base, resolution)
 
-    base_planner = AStarPlanner(base_env, visualize = False)
+    #base_planner = AStarPlanner(base_env, visualize = False)
+    base_planner = None 
     #Peter:
-    arm_planner = HeuristicPlanner(arm_env,visualize = False)
+    #arm_planner = HeuristicRRTPlanner(arm_env,visualize = False)
+    arm_planner = None
     # TODO: Here initialize your arm planner
     
 

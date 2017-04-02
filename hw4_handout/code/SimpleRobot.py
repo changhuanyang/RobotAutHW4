@@ -25,6 +25,8 @@ class SimpleRobot(object):
 
     def ConvertPlanToTrajectory(self, plan):
         # Create a trajectory and insert all points
+
+        #To do!!
         return plan
 
     def ExecuteTrajectory(self, traj, stepsize = 0.01):
