@@ -44,6 +44,8 @@ if __name__ == "__main__":
 
     raw_input('Move robot to start config and press enter')
     sid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
+    gid = sid
+    sid = base_env.discrete_env.ConfigurationToNodeId([-3.,-3.,0.])
     start_config = base_env.discrete_env.NodeIdToConfiguration(sid)
     print("start_config")
     print(start_config)
@@ -55,7 +57,7 @@ if __name__ == "__main__":
     
 
     raw_input('Move robot to goal config and press enter')
-    gid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
+    #gid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
     goal_config = base_env.discrete_env.NodeIdToConfiguration(gid)
     herb_base.SetCurrentConfiguration(goal_config)
     print("start_config")
@@ -66,7 +68,7 @@ if __name__ == "__main__":
     hgoal.SetShow(True)
 
     herb_base.SetCurrentConfiguration(start_config)
-
+    raw_input('press enter2')
     planner = AStarPlanner(base_env, visualize=False)
     plan = planner.Plan(start_config, goal_config)
     traj = herb_base.ConvertPlanToTrajectory(plan)

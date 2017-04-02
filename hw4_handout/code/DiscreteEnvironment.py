@@ -64,7 +64,7 @@ class DiscreteEnvironment(object):
                 config[idx] = (self.lower_limits[idx] + coord[idx]* self.resolution[idx]+self.upper_limits[idx])/2
             else:
                 config[idx] = self.lower_limits[idx] + coord[idx]* self.resolution[idx] + self.resolution[idx]/2
-            assert(coord[idx] < self.num_cells[idx])
+
         return config
 
     def GridCoordToNodeId(self,coord):
