@@ -147,9 +147,28 @@ class SimpleEnvironment(object):
         coord = numpy.array(self.discrete_env.NodeIdToGridCoord(node_id))
         #print config
         
-        
+        #get currentconfig
+        start_config = NodeIdToConfiguration(node_id)
 
+        #get current angle
+        current_angle = coord[2]
 
+        #use library to get the action template
+        action_set_of_this_angle = self.actions[current_angle]
+
+        # the structure of successor
+        # [id_forward      id_backward      id_rightturn   id_leftturn ]
+        for i in range(len(action_set_of_this_angle))
+            #get the control and footprint of this action
+            this_action = action_set_of_this_angle[i];
+            foot_print = this_action.footprint
+            contol = action.control
+
+            #get the snap config from footprint(the last one)
+            increase_step = foot_print[-1]
+            new_config = numpy.array(start_config) + numpy.array(increase_step) 
+            nid = self.discrete_env.ConfigurationToNodeId(new_config)
+            successors.append([nid,this_aciton])
         return successors
 
     def ComputeDistance(self, start_id, end_id):
