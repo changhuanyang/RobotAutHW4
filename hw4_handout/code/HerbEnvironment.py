@@ -4,7 +4,7 @@ from DiscreteEnvironment import DiscreteEnvironment
 class HerbEnvironment(object):
     
     def __init__(self, herb, resolution):
-        
+        self.herb = herb
         self.robot = herb.robot
         self.lower_limits, self.upper_limits = self.robot.GetActiveDOFLimits()
         self.discrete_env = DiscreteEnvironment(resolution, self.lower_limits, self.upper_limits)
@@ -27,9 +27,9 @@ class HerbEnvironment(object):
         #self.robot.GetEnv().Add(table)
 
         #table_pose = numpy.array([[ 0, 0, -1, 0.7], 
-                                  [-1, 0,  0, 0], 
-                                  [ 0, 1,  0, 0], 
-                                  [ 0, 0,  0, 1]])
+        #                          [-1, 0,  0, 0], 
+        #                          [ 0, 1,  0, 0], 
+        #                          [ 0, 0,  0, 1]])
         #table.SetTransform(table_pose)
 	       
         # set the camera

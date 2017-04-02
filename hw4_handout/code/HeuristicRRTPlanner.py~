@@ -11,7 +11,7 @@ class HeuristicRRTPlanner(object):
         self.cost = dict()
         self.pmin = 0.2
     def Plan(self, start_config, goal_config, epsilon = 0.001):
-        print('start arm plan')
+        
         tree = RRTTree(self.planning_env, start_config)
         plan = []
         if self.visualize and hasattr(self.planning_env, 'InitializePlot'):
@@ -58,10 +58,9 @@ class HeuristicRRTPlanner(object):
             #If point_drop can only connect to start tree or connect to goal point
             else:
                 c_path  = self.cost[nearest_index] + self.planning_env.ComputeDistance_continue(point_chosen_from_s, nearest_point)
-		              
-		#          current path cost  + heuristic distance
+                #          current path cost  + heuristic distance
                 c_vertex = c_path + self.planning_env.ComputeDistance_continue(point_chosen_from_s,goal_config)
-                print('h_cost_in_arm',self.planning_env.ComputeDistance_continue(point_chosen_from_s,goal_config))
+                
                 m_q = 1- (c_vertex-opt_cost)/(max_cost-opt_cost)                
                 p = max(m_q,self.pmin)
                 r = numpy.random.random_sample()

@@ -26,7 +26,7 @@ class GraspPlanner(object):
         self.grasps = self.gmodel.grasps
         self.order_grasps()
         #TODO uncomment orgConfig
-        #orgConfig = self.base_planner.planning_env.herb.GetCurrentConfiguration()
+        orgConfig = self.base_planner.planning_env.herb.GetCurrentConfiguration()
         # get the highest score grasping pose
         self.show_grasp(self.grasps_ordered[0]) # visualize solution, seems ok
         #print "top grasping {}".format(self.grasps_ordered[0])
@@ -49,28 +49,30 @@ class GraspPlanner(object):
         #print "trans:  {}".format(trans)
         
         for pose in poses:
-    	    #self.robot.SetTransform(pose) # pose format [s, vx, vy, vz, x, y, z]
+    	   #self.robot.SetTransform(pose) # pose format [s, vx, vy, vz, x, y, z]
             angle = openravepy.axisAngleFromQuat(pose)
             continuousPose = copy.deepcopy([pose[4], pose[5], angle[2]]) # 2D location with orientation
-            #TODO convert continuous pose to discrete pose
-            #node = self.base_planner.planning_env.discrete_env.ConfigurationToNodeId(continuousPose)
-            #discretePose = self.base_planner.planning_env.discrete_env.NodeIdToConfiguration(node)
-            discretePose = continuousPose #TODO need to be commented out
+                #TODO convert continuous pose to discrete pose
+            node = self.base_planner.planning_env.discrete_env.ConfigurationToNodeId(continuousPose)
+            discretePose = self.base_planner.planning_env.discrete_env.NodeIdToConfiguration(node)
+            #discretePose = continuousPose #TODO need to be commented out
             basePose = openravepy.quatFromAxisAngle([0, 0, discretePose[2]])
             basePose = numpy.append(basePose, [discretePose[0], discretePose[1], 0])
+            #basePose = numpy.array(discretePose)
 
             obstacles = self.robot.GetEnv().GetBodies()
-
+            #print('gettransform=',self.robot.GetTransform())
             self.robot.SetTransform(basePose)
-            #get grasp joing config from IK
+                #get grasp joing config from IK
             graspConfig = self.manip.FindIKSolution(graspTransform,filteroptions=openravepy.IkFilterOptions.CheckEnvCollisions.IgnoreEndEffectorCollisions)
             if self.robot.GetEnv().CheckCollision(self.robot, obstacles[1]) != True and graspConfig != None:
                 print "basePose:  {}".format(basePose)
                 print "graspConfig:  {}".format(graspConfig)
                 #IPython.embed()
                 #TODO restore robot position before return
-                #self.base_planner.planning_env.herb.SetCurrentConfiguration(orgConfig)
-                return basePose, graspConfig
+                self.base_planner.planning_env.herb.SetCurrentConfiguration(orgConfig)
+                        #Peter,change 
+                return discretePose, graspConfig
  
         print "Fail to find solution!!!"
         return basePose, graspConfig
@@ -141,12 +143,15 @@ class GraspPlanner(object):
         # Next select a pose for the base and an associated ik for the arm
         base_pose, grasp_config = self.GetBasePoseForObjectGrasp(obj)
 
+
         if base_pose is None or grasp_config is None:
             print 'Failed to find solution'
             exit()
 
         # Now plan to the base pose
         start_pose = numpy.array(self.base_planner.planning_env.herb.GetCurrentConfiguration())
+        print('len of base_pose=',len(base_pose))
+        print('base_pose', base_pose)
         base_plan = self.base_planner.Plan(start_pose, base_pose)
         base_traj = self.base_planner.planning_env.herb.ConvertPlanToTrajectory(base_plan)
 

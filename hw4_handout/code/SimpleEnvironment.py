@@ -102,14 +102,14 @@ class SimpleEnvironment(object):
         #Peter
         Omega_left  = 1
         Omega_right = 1
-        Duration = 1.2
+        Duration = 1.1
         
         #4type_control setting 
         C_forward = Control(Omega_left,Omega_right,Duration);
         C_backward = Control(-Omega_left,-Omega_right,Duration);
 
-        C_rightturn = Control(-Omega_left,Omega_right,Duration);
-        C_leftturn = Control(Omega_left,Omega_right,Duration);
+        C_rightturn = Control(-Omega_left*(self.resolution[2]/0.8),Omega_right*(self.resolution[2]/0.8),Duration);
+        C_leftturn = Control(Omega_left*(self.resolution[2]/0.8),-Omega_right*(self.resolution[2]/0.8),Duration);
 
         # Iterate through each possible starting orientation
         for idx in range(int(self.discrete_env.num_cells[2])):

@@ -11,7 +11,7 @@ class AStarPlanner(object):
 
 
     def Plan(self, start_config, goal_config):
-
+        print('Astar plan start')
         plan = []
         start_time = time.time()
 
@@ -70,7 +70,7 @@ class AStarPlanner(object):
                 if (n_id not in overall_cost or new_cost < overall_cost[n_id]) :
                     overall_cost[n_id] = new_cost
                     H_cost = k*self.planning_env.ComputeHeuristicCost(goal_id, n_id)
-                    print('hcost=',H_cost)
+                    #print('hcost=',H_cost)
                     priority_cost = new_cost + H_cost
                     #a_map.put(neighbour, priority_cost)
                     a_map.append([n_id,priority_cost])
