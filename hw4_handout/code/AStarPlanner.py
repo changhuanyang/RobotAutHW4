@@ -1,6 +1,6 @@
-from Queue import PriorityQueue
-import time
-import numpy
+import sets
+import collections
+import IPython
 
 class AStarPlanner(object):
     
@@ -9,113 +9,112 @@ class AStarPlanner(object):
         self.visualize = visualize
         self.nodes = dict()
 
+    def heuristic (self, start_id, end_id, multiple = 5):
+        cost = self.planning_env.ComputeHeuristicCost(start_id, end_id)
+        cost = cost * multiple
+        return cost
+
+    def distance (self, start_id, goal_id):
+        dist = self.planning_env.ComputeDistance(start_id, goal_id)
+        return dist
+    
+    def getConfig (self, iid):
+        config = self.planning_env.discrete_env.NodeIdToConfiguration(iid)
+        return config
+
+    def getLowestId (self, openList, costs): 
+        idx = 1
+        for iid in openList:
+            if idx == 1:
+                lowestId = iid
+                idx += 1
+            elif costs[iid] < costs[lowestId]:
+              lowestId  = iid
+        return lowestId
 
     def Plan(self, start_config, goal_config):
-        print('Astar plan start')
+
         plan = []
-        start_time = time.time()
-
-        if( self.visualize and hasattr(self.planning_env, 'InitializePlot')):
-            self.planning_env.InitializePlot(goal_config)
-
-        #a_map = PriorityQueue()
-        a_map = [];
+        planAction = []
         
-        action_traj = {}
-        trajectory = {}
-        overall_cost = {}
-        total_vertices = 1
-
-        start_id = self.planning_env.discrete_env.ConfigurationToNodeId(start_config)
-        goal_id = self.planning_env.discrete_env.ConfigurationToNodeId(goal_config)
-        trajectory[start_id] = None
-        #there is no action exeacute, to make robot move to start config
-        action_traj[start_id] = None
-        
-        overall_cost[start_id] = 0
-        path_found = False
-
-        #a_map.put(start)
-        a_map.append([start_id,0])
-        #Herutist weight
-        k = 1
-
-        #while not a_map.empty():
-        while len(a_map):
-            #current_node = a_map.get()
-            current_node = a_map.pop(0)[0]
-            current_node_config =  self.planning_env.discrete_env.NodeIdToConfiguration(current_node)       
-            #print "pop_id = ", current_node
-            #if(total_vertices%2000 == 0):
-            #    print "vertices = ", total_vertices
-            
-            if current_node == goal_id:
-                path_found = True
-                if(self.visualize):
-                        n_node_config = self.planning_env.discrete_env.NodeIdToConfiguration(neighbour)
-                        self.planning_env.PlotEdge(current_node_config,goal_config)
-                break
-
-
-            Successors = self.planning_env.GetSuccessors(current_node)
-            #neibhbour type = [n_id,action]
-            for neighbour in Successors:
-                n_id = neighbour[0]
-                n_action = neighbour[1]
-
-                n_config = self.planning_env.discrete_env.NodeIdToConfiguration(n_id)
-                
-                new_cost = overall_cost[current_node] + self.planning_env.ComputeDistance(current_node, n_id)
-                #check this_id is not visited or the cost less than last time visted
-                if (n_id not in overall_cost or new_cost < overall_cost[n_id]) :
-                    overall_cost[n_id] = new_cost
-                    H_cost = k*self.planning_env.ComputeHeuristicCost(goal_id, n_id)
-                    #print('hcost=',H_cost)
-                    priority_cost = new_cost + H_cost
-                    #a_map.put(neighbour, priority_cost)
-                    a_map.append([n_id,priority_cost])
-                    trajectory[n_id] = current_node
-                    action_traj[n_id] = n_action
-                    total_vertices += 1
-                    if(self.visualize):
-                        n_node_config = self.planning_env.discrete_env.NodeIdToConfiguration(n_id)
-                        self.planning_env.PlotEdge(current_node_config,n_node_config)
-                    # self.planning_env.PlotEdge(self.planning_env.discrete_env.NodeIdToConfiguration(current_node),self.planning_env.discrete_env.NodeIdToConfiguration(neighbour))
-                    # print "cost: " cost_so_far[next],"came from: "came_from[next] 
-            a_map.sort(key=lambda x: x[1])
-            #print('len of map =',len(a_map))
         # TODO: Here you will implement the AStar planner
         #  The return path should be a numpy array
         #  of dimension k x n where k is the number of waypoints
         #  and n is the dimension of the robots configuration space
-                
-        current_id = goal_id
-        plan = []
-        plan_action = []
-        if path_found :
-            print "Path found"
-            while(trajectory[current_id] != start_id):
-                plan.append(self.planning_env.discrete_env.NodeIdToConfiguration(current_id))
-                plan_action.append(action_traj[current_id])
-                if(self.visualize):
-                    self.planning_env.PlotEdge(self.planning_env.discrete_env.NodeIdToConfiguration(current_id),self.planning_env.discrete_env.NodeIdToConfiguration(trajectory[current_id]))
-                current_id = trajectory[current_id]
-        else:
-            print "No path found"
-        
-        #plan[0] = goal_config
-        #plan.append(start_config)
-        #inverse plan
+
+        if self.visualize and hasattr(self.planning_env, 'InitializePlot'):
+            self.planning_env.InitializePlot(goal_config)
+
+        start_id = self.planning_env.discrete_env.ConfigurationToNodeId(start_config)
+        goal_id = self.planning_env.discrete_env.ConfigurationToNodeId(goal_config)
+
+        # Open /closed list of nodes / ids
+        openList = collections.deque([start_id])
+        closedList = collections.deque()
+        # Dictionary of edges
+        edges = {}
+        actions = {}
+        # evaluation cost
+        ecosts = {start_id : 0}
+        # operating cost
+        ocosts = {start_id : 0}
+
+        curr_id = start_id
+        while openList:
+            # Get lowest evaluation cost ID
+            curr_id = self.getLowestId (openList, ecosts)
+            # Remove the best curr_id from open, add to closed
+            openList.remove(curr_id)
+            closedList.append(curr_id)
+            # Get neighbors
+            neighbors = self.planning_env.GetSuccessors(curr_id)
+
+            # early exit
+            if curr_id == goal_id:
+              break
+
+            for neighbor in neighbors:
+                neighborID = neighbor[0]
+                neighborAction = neighbor[1]
+                #if not self.planning_env.no_collision(self.planning_env.discrete_env.NodeIdToConfiguration(neighborID)):
+                    #IPython.embed()
+                # If neighborID is not visited yet; otherwise, move to next neighborID
+                if neighborID not in closedList:
+                    # If neighborID isn't in openlist, add it, precompute evaluation function, operating cost, connect to graph
+                    if neighborID not in openList:                        
+                        
+                        ocosts[neighborID] = self.distance(curr_id, neighborID) + ocosts[curr_id]
+                        ecosts[neighborID] = ocosts[neighborID] + self.heuristic(neighborID, goal_id)
+                        openList.append(neighborID)
+                        edges[neighborID] = curr_id
+                        actions[neighborID] = neighborAction # corresponding action
+                        
+                        # plot edge
+                        if self.visualize:
+                            self.planning_env.PlotEdge(self.planning_env.discrete_env.NodeIdToConfiguration(curr_id),\
+                                                       self.planning_env.discrete_env.NodeIdToConfiguration(neighborID), 'k')
+
+                    # if neighbor is in open list, then see if it is closer to beginning now than before
+                    else:
+                        currcost = ocosts[neighborID]
+                        updatecost = ocosts[curr_id] + self.distance(curr_id, neighborID)
+                        if updatecost < currcost:
+                            edges[neighborID] = curr_id
+                            actions[neighborID] = neighborAction # corresponding action
+
+                     
+        plan_id = goal_id
+        print "nodes expanded: %d" % len(edges)
+        while plan_id != start_id:
+            config = self.getConfig(plan_id)
+            plan.append(config)
+            planAction.append(actions[plan_id])
+            plan_id = edges[plan_id]
+             
+            
+        plan.append(start_config)
         plan = plan[::-1]
-        plan_action = plan_action[::-1]
-        #print for time, path length and total tree vertices
-        total_time = time.time() - start_time
-        print "total plan time = ",total_time
-        
-        print "total path length",self.planning_env.ComputePathLength(plan)
-
-        print "total visited vertices", total_vertices
-
-
-
-        return plan_action
+        planAction = planAction[::-1]
+        plan.append(goal_config)
+        self.planning_env.herb.SetCurrentConfiguration(start_config)
+        return planAction

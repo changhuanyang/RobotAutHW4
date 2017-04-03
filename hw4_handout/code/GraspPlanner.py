@@ -1,4 +1,5 @@
 import logging, numpy, openravepy, time, copy
+import numpy.linalg as la
 import IPython
 
 class GraspPlanner(object):
@@ -25,10 +26,10 @@ class GraspPlanner(object):
         self.graspindices = self.gmodel.graspindices
         self.grasps = self.gmodel.grasps
         self.order_grasps()
-        #TODO uncomment orgConfig
+        #uncomment orgConfig
         orgConfig = self.base_planner.planning_env.herb.GetCurrentConfiguration()
         # get the highest score grasping pose
-        self.show_grasp(self.grasps_ordered[0]) # visualize solution, seems ok
+        # self.show_grasp(self.grasps_ordered[0]) # visualize solution, seems ok
         #print "top grasping {}".format(self.grasps_ordered[0])
         graspTransform = self.gmodel.getGlobalGraspTransform(self.grasps_ordered[0], collisionfree = True)
       
@@ -49,13 +50,13 @@ class GraspPlanner(object):
         #print "trans:  {}".format(trans)
         
         for pose in poses:
-    	   #self.robot.SetTransform(pose) # pose format [s, vx, vy, vz, x, y, z]
+    	    #self.robot.SetTransform(pose) # pose format [s, vx, vy, vz, x, y, z]
             angle = openravepy.axisAngleFromQuat(pose)
             continuousPose = copy.deepcopy([pose[4], pose[5], angle[2]]) # 2D location with orientation
-                #TODO convert continuous pose to discrete pose
+            #convert continuous pose to discrete pose
             node = self.base_planner.planning_env.discrete_env.ConfigurationToNodeId(continuousPose)
             discretePose = self.base_planner.planning_env.discrete_env.NodeIdToConfiguration(node)
-            #discretePose = continuousPose #TODO need to be commented out
+
             basePose = openravepy.quatFromAxisAngle([0, 0, discretePose[2]])
             basePose = numpy.append(basePose, [discretePose[0], discretePose[1], 0])
             #basePose = numpy.array(discretePose)
@@ -63,19 +64,25 @@ class GraspPlanner(object):
             obstacles = self.robot.GetEnv().GetBodies()
             #print('gettransform=',self.robot.GetTransform())
             self.robot.SetTransform(basePose)
-                #get grasp joing config from IK
-            graspConfig = self.manip.FindIKSolution(graspTransform,filteroptions=openravepy.IkFilterOptions.CheckEnvCollisions.IgnoreEndEffectorCollisions)
+            #get grasp joing config from IK
+            tableTransform = obstacles[1].GetTransform()
+            tablePosition = (tableTransform[0][3], tableTransform[1][3])
+            dist = la.norm(numpy.array([discretePose[0], discretePose[1]])-numpy.array(tablePosition))
+            #IPython.embed()
+            graspConfig = self.manip.FindIKSolution(graspTransform,filteroptions=openravepy.IkFilterOptions.CheckEnvCollisions)
+            #if self.robot.GetEnv().CheckCollision(self.robot, obstacles[1]) != True and graspConfig != None and dist > 0.9 and dist < 1.1:
             if self.robot.GetEnv().CheckCollision(self.robot, obstacles[1]) != True and graspConfig != None:
-                print "basePose:  {}".format(basePose)
+                print "discretePose:  {}".format(discretePose)
                 print "graspConfig:  {}".format(graspConfig)
+                print "dist:  {}".format(dist)
                 #IPython.embed()
-                #TODO restore robot position before return
+                #restore robot position before return
                 self.base_planner.planning_env.herb.SetCurrentConfiguration(orgConfig)
-                        #Peter,change 
+                #Peter,change 
                 return discretePose, graspConfig
  
         print "Fail to find solution!!!"
-        return basePose, graspConfig
+        return discretePose, graspConfig
 
     #copy from hw1
     def order_grasps(self):
@@ -120,7 +127,7 @@ class GraspPlanner(object):
                 return  -100.00 # way smaller than most of the scores
 
       #displays the grasp
-    def show_grasp(self, grasp, delay=2):
+    def show_grasp(self, grasp, delay=0.5):
         with openravepy.RobotStateSaver(self.gmodel.robot):
             with self.gmodel.GripperVisibility(self.gmodel.manip):
                 time.sleep(0.1) # let viewer update?
@@ -150,8 +157,8 @@ class GraspPlanner(object):
 
         # Now plan to the base pose
         start_pose = numpy.array(self.base_planner.planning_env.herb.GetCurrentConfiguration())
-        print('len of base_pose=',len(base_pose))
-        print('base_pose', base_pose)
+        #print('len of base_pose=',len(base_pose))
+        #print('base_pose', base_pose)
         base_plan = self.base_planner.Plan(start_pose, base_pose)
         base_traj = self.base_planner.planning_env.herb.ConvertPlanToTrajectory(base_plan)
 
@@ -163,10 +170,13 @@ class GraspPlanner(object):
         arm_plan = self.arm_planner.Plan(start_config, grasp_config)
         arm_traj = self.arm_planner.planning_env.herb.ConvertPlanToTrajectory(arm_plan)
 
+        IPython.embed()
         print 'Executing arm trajectory'
         self.arm_planner.planning_env.herb.ExecuteTrajectory(arm_traj)
 
         # Grasp the bottle
-        task_manipulation = openravepy.interfaces.TaskManipulation(self.robot)
-        task_manipultion.CloseFingers()
+        openravepy.interfaces.TaskManipulation(self.robot).CloseFingers()
+        #task_manipulation = openravepy.interfaces.TaskManipulation(self.robot).CloseFingers()
+        #IPython.embed()
+        #task_manipultion.CloseFingers()
     

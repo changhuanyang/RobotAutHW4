@@ -1,4 +1,5 @@
 import numpy
+import geometric_planner as gp
 from DiscreteEnvironment import DiscreteEnvironment
 
 class HerbEnvironment(object):
@@ -25,7 +26,8 @@ class HerbEnvironment(object):
         #table = self.robot.GetEnv().ReadKinBodyXMLFile('models/objects/table.kinbody.xml')
         
         #self.robot.GetEnv().Add(table)
-
+        #print self.lower_limits
+        #print self.upper_limits
         #table_pose = numpy.array([[ 0, 0, -1, 0.7], 
         #                          [-1, 0,  0, 0], 
         #                          [ 0, 1,  0, 0], 
@@ -77,6 +79,10 @@ class HerbEnvironment(object):
         # by te two node ids
         return dist
 
+    def SetGoalParameters(self, goal_config, p = 0.2):
+        self.goal_config = goal_config
+        self.p = p
+
     def ComputeHeuristicCost(self, start_id, goal_id):
         cost = 0
         # TODO: Here you will implement a function that 
@@ -84,16 +90,23 @@ class HerbEnvironment(object):
         # given by the two node ids
         cost = self.ComputeDistance(start_id,goal_id)
         return cost
-    def no_collision(self, n_config):
-        with self.robot:
-        #change the current position valuse wiht n_config
-            self.robot.SetActiveDOFValues(numpy.array(n_config))
-        #move robot to new positi
-        #print "checkcollision = ",self.robot.GetEnv().CheckCollision(self.robot)
-        #print "selfcheck= ",self.robot.CheckSelfCollision()      i 
-            flag = self.robot.GetEnv().CheckCollision(self.robot) or self.robot.CheckSelfCollision()
-            flag = not flag
-        return flag
+
+    def CheckCollision(self, config):
+        self.robot.SetActiveDOFValues(config.squeeze())
+        obstacles = self.robot.GetEnv().GetBodies()
+        collision = self.robot.GetEnv().CheckCollision(self.robot, obstacles[1]) or self.robot.GetEnv().CheckCollision(self.robot, obstacles[2]) or self.robot.CheckSelfCollision()
+
+        return collision
+
+
+    def no_collision(self, config):
+
+        self.robot.SetActiveDOFValues(config.squeeze())
+        obstacles = self.robot.GetEnv().GetBodies()
+        collision = self.robot.GetEnv().CheckCollision(self.robot, obstacles[1]) or self.robot.GetEnv().CheckCollision(self.robot, obstacles[2]) or self.robot.CheckSelfCollision()
+
+        return not collision        
+
     def ComputePathLength(self, path):
         path_length = 0
         for milestone in range(1,len(path)):
@@ -102,27 +115,38 @@ class HerbEnvironment(object):
         return path_length
 
     def GenerateRandomConfiguration(self):
+        new_config = gp.generate(self.lower_limits, self.upper_limits, 
+                                 self.goal_config, self.p,
+                                 self.CheckCollision)
+    
+        return new_config
+    
+    """def GenerateRandomConfiguration(self):
         config = [0] * len(self.robot.GetActiveDOFIndices())
 
-        #
-        # TODO: Generate and return a random configuration
-        #
-    # Brad: Generate and return a random, collision-free, configuration
         lower_limits, upper_limits = self.robot.GetActiveDOFLimits()
         collisionFlag = True
         while collisionFlag is True:
             for dof in range(len(self.robot.GetActiveDOFIndices())):
                 config[dof] = lower_limits[dof] + (upper_limits[dof] - lower_limits[dof]) * numpy.random.random_sample()
-                self.robot.SetActiveDOFValues(numpy.array(config))
-            if(self.robot.GetEnv().CheckCollision(self.robot)) is False:
-                if(self.robot.CheckSelfCollision()) is False:
-                    collisionFlag = False
+            if self.CheckCollision(numpy.array(config)) is False and self.robot.CheckSelfCollision() is False:
+                collisionFlag = False
             #else:
                 #print "Self Collision detected in random configuration"
         #else:
             #print "Collision Detected in random configuration" 
         return numpy.array(config)
-    def Extend(self, start_config, end_config):
+""" 
+    def Extend(self, start_config, end_config, epsilon=0.1):
+        #
+        # TODO: Implement a function which attempts to extend from 
+        #   a start configuration to a goal configuration
+        #
+        new_config = gp.extend(start_config, end_config, self.CheckCollision, epsilon)
+    
+        return new_config
+   
+"""    def Extend(self, start_config, end_config):
         
         #
         # TODO: Implement a function which attempts to extend from 
@@ -158,11 +182,12 @@ class HerbEnvironment(object):
 
         #Set config and check for collision
         #CHECK: Lock environment?
-            self.robot.SetActiveDOFValues(numpy.array(config))
-            if(self.robot.GetEnv().CheckCollision(self.robot)) is True:
+            #self.robot.SetActiveDOFValues(numpy.array(config))
+            if(self.CheckCollision(numpy.array(config))) is True:
             #print "Collision Detected in extend"
                 return prev_config
             if(self.robot.CheckSelfCollision()) is True:
             #print "Self Collision Detected in extend"
                 return prev_config
         return end_config
+"""   

@@ -1,5 +1,7 @@
 import numpy, openravepy
 import pylab as pl
+import IPython
+import copy
 from DiscreteEnvironment import DiscreteEnvironment
 
 class Control(object):
@@ -108,9 +110,11 @@ class SimpleEnvironment(object):
         C_forward = Control(Omega_left,Omega_right,Duration);
         C_backward = Control(-Omega_left,-Omega_right,Duration);
 
+        #C_rightturn = Control(-Omega_left, Omega_right, Duration);
+        #C_leftturn = Control(Omega_left, -Omega_right, Duration);
+
         C_rightturn = Control(-Omega_left*(self.resolution[2]/0.8),Omega_right*(self.resolution[2]/0.8),Duration);
         C_leftturn = Control(Omega_left*(self.resolution[2]/0.8),-Omega_right*(self.resolution[2]/0.8),Duration);
-
         # Iterate through each possible starting orientation
         for idx in range(int(self.discrete_env.num_cells[2])):
             self.actions[idx] = []
@@ -135,15 +139,15 @@ class SimpleEnvironment(object):
             self.actions[idx] = [Ac_forward,Ac_backward,Ac_rightturn,Ac_leftturn]
 
     #help function
-    def no_collision(self, node_id):
-        with self.robot:
-        #change the current position valuse wiht n_config
-        #move robot to new positi
-        #print "checkcollision = ",self.robot.GetEnv().CheckCollision(self.robot)
-        #print "selfcheck= ",self.robot.CheckSelfCollision()      i 
-            flag = self.robot.GetEnv().CheckCollision(self.robot)
-            flag = not flag
-        return flag
+    def no_collision(self, config):
+
+        pose =  openravepy.quatFromAxisAngle([0, 0, config[2]])
+        pose = numpy.append(pose, [config[0], config[1], 0])
+        self.robot.SetTransform(pose)
+        #IPython.embed()
+        collision = self.robot.GetEnv().CheckCollision(self.robot)
+
+        return not collision
 
 
     def GetSuccessors(self, node_id):
@@ -159,7 +163,7 @@ class SimpleEnvironment(object):
         
         #get currentconfig
         start_config = self.discrete_env.NodeIdToConfiguration(node_id)
-
+        #print "start_config {}".format(start_config)
         #get current angle
         current_angle = coord[2]
 
@@ -171,17 +175,22 @@ class SimpleEnvironment(object):
             #get the control and footprint of this action
             this_action = action_set_of_this_angle[i];
             foot_print = this_action.footprint
+            #print "foot_print {}".format(foot_print)
+            #this_action.footprint = [[x[0]+start_config[0], x[1]+start_config[1], x[2]] for x in this_action.footprint]
+            #print "foot_print {}".format(foot_print)
             #get the snap config from footprint(the last one)
+            #new_config = numpy.array(this_action.footprint[-1]) 
+            #print "foot_print {}".format(this_action.footprint[-1])
             increase_step = foot_print[-1]
             new_config = numpy.array(start_config).copy()
             new_config[2] = 0
             new_config = new_config + numpy.array(increase_step) 
             #wrap to pi
-
             nid = self.discrete_env.ConfigurationToNodeId(new_config)
             #collision check
-            if (self.no_collision(nid)):
-                successors.append([nid,this_action])
+            if (self.no_collision(new_config)):
+                successors.append([nid, this_action])
+                #IPython.embed()
         #print('number of successors = ',len(successors))
         return successors
 
@@ -195,9 +204,9 @@ class SimpleEnvironment(object):
         start_config = numpy.array(self.discrete_env.NodeIdToConfiguration(start_id))
         goal_config = numpy.array(self.discrete_env.NodeIdToConfiguration(end_id))
         #only use (x,y) to count the dist
-        dif = goal_config- start_config;
 
         dist = numpy.linalg.norm(goal_config- start_config)
+        dist = float(dist)
 
         return dist
 
