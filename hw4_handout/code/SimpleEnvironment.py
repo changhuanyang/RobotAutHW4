@@ -72,16 +72,25 @@ class SimpleEnvironment(object):
     def PlotActionFootprints(self, idx):
 
         actions = self.actions[idx]
-        fig = pl.figure()
+        fig = pl.figure(1)
         lower_limits, upper_limits = self.boundary_limits
         pl.xlim([lower_limits[0], upper_limits[0]])
         pl.ylim([lower_limits[1], upper_limits[1]])
-        
+        i = 0;
         for action in actions:
             xpoints = [config[0] for config in action.footprint]
             ypoints = [config[1] for config in action.footprint]
-            pl.plot(xpoints, ypoints, 'k')
-                     
+            if(i==0):
+                pl.plot(xpoints, ypoints,'-r')
+            if(i==1):
+                pl.plot(xpoints, ypoints,'-b')
+            if(i==2):
+                pl.plot(xpoints, ypoints,'-y')
+            if(i==3):
+                pl.plot(xpoints, ypoints,'-w')
+            i += 1
+            if(i == 4):
+                i = 0
         pl.ion()
         pl.show()
         #help function
@@ -138,6 +147,7 @@ class SimpleEnvironment(object):
             #storage in actions
             self.actions[idx] = [Ac_forward,Ac_backward,Ac_rightturn,Ac_leftturn]
 
+            #self.PlotActionFootprints(idx)
     #help function
     def no_collision(self, config):
 
