@@ -48,7 +48,7 @@ class HeuristicRRTPlanner(object):
 
             dist_s = self.planning_env.ComputeDistance_continue(point_chosen_from_s, point_drop)
             dist_g = self.planning_env.ComputeDistance_continue(point_chosen_from_g, point_drop)
-            print "dist_s {} dist_g {}".format(dist_s, dist_g)
+            #print "dist_s {} dist_g {}".format(dist_s, dist_g)
             #find the path from start to end
             if (dist_s <= epsilon and dist_g <= epsilon):
                 point_addon_s_final = tree.AddVertex(point_chosen_from_s)
@@ -67,7 +67,7 @@ class HeuristicRRTPlanner(object):
                 #print('h_cost_in_arm',self.planning_env.ComputeDistance_continue(point_chosen_from_s, goal_config))
                 m_q = 1- (c_vertex-opt_cost)/(max_cost-opt_cost)                
                 p = max(m_q,self.pmin)
-                print "prob: {} c_vertex: {} vertex number: {}".format(p, c_vertex, len(tree.vertices))
+                #print "prob: {} c_vertex: {} vertex number: {}".format(p, c_vertex, len(tree.vertices))
                 r = numpy.random.random_sample()
                 if(r < p):
                     point_addon_s = tree.AddVertex(point_chosen_from_s)

@@ -67,14 +67,18 @@ class GraspPlanner(object):
             #get grasp joing config from IK
             tableTransform = obstacles[1].GetTransform()
             tablePosition = (tableTransform[0][3], tableTransform[1][3])
-            dist = la.norm(numpy.array([discretePose[0], discretePose[1]])-numpy.array(tablePosition))
+            tableDist = la.norm(numpy.array([discretePose[0], discretePose[1]])-numpy.array(tablePosition))
+            bottleTransform = obstacles[2].GetTransform()
+            bottlePosition = (bottleTransform[0][3], bottleTransform[1][3])
+            bottleDist = la.norm(numpy.array([discretePose[0], discretePose[1]])-numpy.array(bottlePosition))
             #IPython.embed()
             graspConfig = self.manip.FindIKSolution(graspTransform,filteroptions=openravepy.IkFilterOptions.CheckEnvCollisions)
             #if self.robot.GetEnv().CheckCollision(self.robot, obstacles[1]) != True and graspConfig != None and dist > 0.9 and dist < 1.1:
             if self.robot.GetEnv().CheckCollision(self.robot, obstacles[1]) != True and graspConfig != None:
                 print "discretePose:  {}".format(discretePose)
                 print "graspConfig:  {}".format(graspConfig)
-                print "dist:  {}".format(dist)
+                print "tableDist:  {}".format(tableDist)
+                print "bottleDist:  {}".format(bottleDist)
                 #IPython.embed()
                 #restore robot position before return
                 self.base_planner.planning_env.herb.SetCurrentConfiguration(orgConfig)
