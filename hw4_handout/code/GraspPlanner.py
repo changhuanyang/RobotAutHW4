@@ -165,8 +165,9 @@ class GraspPlanner(object):
         #print('base_pose', base_pose)
         base_plan = self.base_planner.Plan(start_pose, base_pose)
         base_traj = self.base_planner.planning_env.herb.ConvertPlanToTrajectory(base_plan)
-
-        print 'Executing base trajectory'
+        
+        
+        raw_input( 'Press Enter to Execute base trajectory')
         self.base_planner.planning_env.herb.ExecuteTrajectory(base_traj)
 
         # Now plan the arm to the grasp configuration
@@ -174,8 +175,8 @@ class GraspPlanner(object):
         arm_plan = self.arm_planner.Plan(start_config, grasp_config)
         arm_traj = self.arm_planner.planning_env.herb.ConvertPlanToTrajectory(arm_plan)
 
-        IPython.embed()
-        print 'Executing arm trajectory'
+        raw_input("Press Enter to Excute the arm trajectory")
+        #print 'Executing arm trajectory'
         self.arm_planner.planning_env.herb.ExecuteTrajectory(arm_traj)
 
         # Grasp the bottle
